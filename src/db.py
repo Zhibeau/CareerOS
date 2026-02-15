@@ -333,6 +333,17 @@ class CareerDB:
         ).fetchone()
         return dict(row) if row else None
 
+    def find_by_id_prefix(self, table: str, prefix: str) -> list[dict]:
+        """Find rows in a table whose ID starts with the given prefix."""
+        allowed_tables = {"projects", "skills", "achievements", "roles", "conversations"}
+        if table not in allowed_tables:
+            raise ValueError(f"Invalid table: {table}")
+        rows = self.conn.execute(
+            f"SELECT * FROM {table} WHERE id LIKE ?",
+            (f"{prefix}%",),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
     def export_all(self) -> dict:
         return {
             "projects": self.get_projects(),
