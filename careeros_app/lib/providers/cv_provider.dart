@@ -8,23 +8,27 @@ import '../data/remote/extract_api.dart';
 import 'auth_provider.dart';
 import 'career_provider.dart';
 
-final cvStateProvider =
-    AsyncNotifierProvider<CVNotifier, String?>(CVNotifier.new);
+// ── CV preview (structured JSON content from Claude) ──
 
-class CVNotifier extends AsyncNotifier<String?> {
+final cvContentProvider =
+    AsyncNotifierProvider<CVContentNotifier, Map<String, dynamic>?>(
+  CVContentNotifier.new,
+);
+
+class CVContentNotifier extends AsyncNotifier<Map<String, dynamic>?> {
   @override
-  Future<String?> build() async => null;
+  Future<Map<String, dynamic>?> build() async => null;
 
-  Future<void> generate({
+  /// Gather career data for the selected roles and call the backend
+  /// to generate structured CV content for in-app preview.
+  Future<void> preview({
     required String jobDescription,
     required List<String> roleIds,
-    required String format,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final db = ref.read(databaseProvider);
 
-      // Gather career data for selected roles.
       final allRoles = await db.getAllRoles();
       final selectedRoles =
           allRoles.where((r) => roleIds.contains(r.id)).toList();
@@ -33,7 +37,6 @@ class CVNotifier extends AsyncNotifier<String?> {
       final allSkills = await db.getAllSkills();
       final allAchievements = await db.getAllAchievements();
 
-      // Build career data payload.
       final careerData = {
         'roles': selectedRoles
             .map((r) => {
@@ -44,30 +47,62 @@ class CVNotifier extends AsyncNotifier<String?> {
                 })
             .toList(),
         'projects': allProjects
-            .where((p) =>
-                p.roleId != null && roleIds.contains(p.roleId))
+            .where(
+                (p) => p.roleId != null && roleIds.contains(p.roleId))
             .map((p) => {
                   'name': p.name,
                   'summary': p.summary,
                   'role_id': p.roleId,
                 })
             .toList(),
-        'skills':
-            allSkills.map((s) => {'name': s.name, 'category': s.category}).toList(),
+        'skills': allSkills
+            .map((s) => {'name': s.name, 'category': s.category})
+            .toList(),
         'achievements': allAchievements
             .map((a) => {'summary': a.summary, 'impact': a.impact})
             .toList(),
       };
 
-      // Call backend.
       final api = ExtractApi(ref.read(apiClientProvider));
-      final bytes = await api.generateCV(
+      return await api.previewCV(
         careerData: careerData,
         jobDescription: jobDescription,
+      );
+    });
+  }
+
+  /// Update preview content after the user edits it in the preview screen.
+  void updateContent(Map<String, dynamic> edited) {
+    state = AsyncData(edited);
+  }
+}
+
+// ── CV export (render preview content to PDF/DOCX) ──
+
+final cvExportProvider =
+    AsyncNotifierProvider<CVExportNotifier, String?>(CVExportNotifier.new);
+
+class CVExportNotifier extends AsyncNotifier<String?> {
+  @override
+  Future<String?> build() async => null;
+
+  /// Render the current preview content to the requested format,
+  /// save to the documents directory, and return the file path.
+  Future<String> export({required String format}) async {
+    final content = ref.read(cvContentProvider).valueOrNull;
+    if (content == null) {
+      throw StateError('No CV content to export');
+    }
+
+    state = const AsyncLoading();
+
+    final result = await AsyncValue.guard(() async {
+      final api = ExtractApi(ref.read(apiClientProvider));
+      final bytes = await api.renderCV(
+        cvContent: content,
         format: format,
       );
 
-      // Save to downloads.
       final dir = await getApplicationDocumentsDirectory();
       final ext = format == 'pdf' ? 'pdf' : 'docx';
       final fileName =
@@ -75,11 +110,17 @@ class CVNotifier extends AsyncNotifier<String?> {
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(bytes);
 
-      // Share.
-      await Share.shareXFiles([XFile(file.path)],
-          text: 'My CareerOS CV');
-
       return file.path;
     });
+
+    state = result;
+    return result.valueOrNull ?? (throw result.error!);
+  }
+
+  /// Share the most recently exported file.
+  Future<void> share() async {
+    final path = state.valueOrNull;
+    if (path == null) return;
+    await Share.shareXFiles([XFile(path)], text: 'My CareerOS CV');
   }
 }

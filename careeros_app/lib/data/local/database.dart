@@ -229,11 +229,8 @@ class AppDatabase extends _$AppDatabase {
   // ── Queries ──
 
   Future<List<Project>> getAllProjects() async {
-    final query = select(projects).join([
-      leftOuterJoin(roles, roles.id.equalsExp(projects.roleId)),
-    ])
-      ..orderBy([OrderingTerm.desc(projects.startedAt)]);
-
+    final query = select(projects)
+      ..orderBy([(p) => OrderingTerm.desc(p.startedAt)]);
     return query.get();
   }
 

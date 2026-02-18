@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/career_provider.dart';
 import '../../providers/cv_provider.dart';
@@ -13,7 +14,6 @@ class CVInputScreen extends ConsumerStatefulWidget {
 
 class _CVInputScreenState extends ConsumerState<CVInputScreen> {
   final _jdController = TextEditingController();
-  String _format = 'pdf';
   final _selectedRoleIds = <String>{};
 
   @override
@@ -25,8 +25,15 @@ class _CVInputScreenState extends ConsumerState<CVInputScreen> {
   @override
   Widget build(BuildContext context) {
     final roles = ref.watch(rolesProvider);
-    final cvState = ref.watch(cvStateProvider);
+    final cvContent = ref.watch(cvContentProvider);
     final theme = Theme.of(context);
+
+    // Navigate to preview once content is generated.
+    ref.listen(cvContentProvider, (prev, next) {
+      if (next.hasValue && next.valueOrNull != null && !next.isLoading) {
+        context.push('/cv/preview');
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Generate CV')),
@@ -99,84 +106,40 @@ class _CVInputScreenState extends ConsumerState<CVInputScreen> {
             loading: () => const CircularProgressIndicator(),
             error: (err, _) => Text('Error: $err'),
           ),
-          const SizedBox(height: 24),
-
-          // Format selection
-          Text(
-            'Output Format',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'pdf', label: Text('PDF')),
-              ButtonSegment(value: 'docx', label: Text('Word')),
-            ],
-            selected: {_format},
-            onSelectionChanged: (value) =>
-                setState(() => _format = value.first),
-          ),
           const SizedBox(height: 32),
 
           // Generate button
           FilledButton.icon(
-            onPressed: cvState.isLoading ||
+            onPressed: cvContent.isLoading ||
                     _jdController.text.trim().isEmpty ||
                     _selectedRoleIds.isEmpty
                 ? null
-                : () => ref.read(cvStateProvider.notifier).generate(
+                : () => ref.read(cvContentProvider.notifier).preview(
                       jobDescription: _jdController.text.trim(),
                       roleIds: _selectedRoleIds.toList(),
-                      format: _format,
                     ),
-            icon: cvState.isLoading
+            icon: cvContent.isLoading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.description_outlined),
-            label: Text(cvState.isLoading ? 'Generating...' : 'Generate CV'),
+            label:
+                Text(cvContent.isLoading ? 'Generating...' : 'Generate CV'),
           ),
 
-          if (cvState.hasError) ...[
+          if (cvContent.hasError) ...[
             const SizedBox(height: 16),
             Card(
               color: theme.colorScheme.errorContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  cvState.error.toString(),
+                  cvContent.error.toString(),
                   style: TextStyle(
                     color: theme.colorScheme.onErrorContainer,
                   ),
-                ),
-              ),
-            ),
-          ],
-
-          if (cvState.valueOrNull != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              color: theme.colorScheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle,
-                        color: theme.colorScheme.onPrimaryContainer),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'CV generated! Check your downloads.',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),

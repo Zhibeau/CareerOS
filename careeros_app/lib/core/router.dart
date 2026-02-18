@@ -11,6 +11,7 @@ import '../ui/database/projects_screen.dart';
 import '../ui/database/roles_screen.dart';
 import '../ui/database/skills_screen.dart';
 import '../ui/cv/cv_input_screen.dart';
+import '../ui/cv/cv_preview_screen.dart';
 import '../ui/import/import_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/shared/shell_screen.dart';
@@ -79,6 +80,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: CVInputScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'preview',
+                builder: (context, state) => const CVPreviewScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: '/settings',

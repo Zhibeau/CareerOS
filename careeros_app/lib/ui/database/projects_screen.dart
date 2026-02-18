@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/database.dart';
 import '../../providers/career_provider.dart';
 import 'widgets/edit_dialog.dart';
+import 'widgets/link_sheet.dart';
 
 class ProjectsScreen extends ConsumerWidget {
   const ProjectsScreen({super.key});
@@ -51,15 +53,18 @@ class ProjectsScreen extends ConsumerWidget {
                         Text(project.summary!),
                       ],
                       const SizedBox(height: 8),
-                      if (project.roleId != null)
-                        _RoleChip(roleId: project.roleId!)
-                      else
-                        Text(
-                          'No role linked',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
+                      GestureDetector(
+                        onTap: () => _showLinkSheet(context, project),
+                        child: project.roleId != null
+                            ? _RoleChip(roleId: project.roleId!)
+                            : Text(
+                                'Tap to link a role',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                   trailing: IconButton(
@@ -78,6 +83,13 @@ class ProjectsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
       ),
+    );
+  }
+
+  void _showLinkSheet(BuildContext context, Project project) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => LinkProjectToRoleSheet(project: project),
     );
   }
 }

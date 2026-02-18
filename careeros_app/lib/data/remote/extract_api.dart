@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../domain/models/conversation.dart';
 import '../../domain/models/extraction_result.dart';
 import 'api_client.dart';
@@ -8,15 +10,13 @@ class ExtractApi {
   ExtractApi(this._client);
 
   /// Send conversations to the backend for LLM extraction.
-  /// Returns a list of (conversationId, ExtractionResult) pairs.
   Future<List<MapEntry<String, ExtractionResult>>> extract(
     List<Conversation> conversations,
   ) async {
     final response = await _client.dio.post(
       '/extract',
       data: {
-        'conversations':
-            conversations.map((c) => c.toJson()).toList(),
+        'conversations': conversations.map((c) => c.toJson()).toList(),
       },
     );
 
@@ -30,12 +30,44 @@ class ExtractApi {
     }).toList();
   }
 
-  /// Generate a CV document on the server.
-  /// Returns raw bytes (PDF or DOCX).
+  /// Generate structured CV content (JSON) for in-app preview.
+  Future<Map<String, dynamic>> previewCV({
+    required Map<String, dynamic> careerData,
+    required String jobDescription,
+  }) async {
+    final response = await _client.dio.post(
+      '/cv/preview',
+      data: {
+        'career_data': careerData,
+        'job_description': jobDescription,
+      },
+    );
+
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Render CV content to PDF or DOCX bytes.
+  Future<List<int>> renderCV({
+    required Map<String, dynamic> cvContent,
+    required String format,
+  }) async {
+    final response = await _client.dio.post(
+      '/cv/render',
+      data: {
+        'cv_content': cvContent,
+        'format': format,
+      },
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    return response.data as List<int>;
+  }
+
+  /// Combined: generate and render in one call. Returns raw bytes.
   Future<List<int>> generateCV({
     required Map<String, dynamic> careerData,
     required String jobDescription,
-    required String format, // "pdf" or "docx"
+    required String format,
   }) async {
     final response = await _client.dio.post(
       '/cv/generate',
