@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/database.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/career_provider.dart';
 

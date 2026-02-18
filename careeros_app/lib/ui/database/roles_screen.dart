@@ -1,6 +1,8 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/database.dart';
 import '../../providers/career_provider.dart';
 
 class RolesScreen extends ConsumerWidget {

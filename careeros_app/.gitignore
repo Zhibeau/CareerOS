@@ -1,0 +1,29 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Platform build artifacts
+android/.gradle/
+android/app/build/
+android/local.properties
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Misc
+*.log
+.DS_Store
