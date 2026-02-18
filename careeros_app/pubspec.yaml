@@ -1,0 +1,59 @@
+name: careeros_app
+description: CareerOS — Extract career data from AI conversations
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Local database
+  drift: ^2.15.0
+  sqlite3_flutter_libs: ^0.5.20
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
+  # HTTP
+  dio: ^5.4.1
+
+  # File picking (for JSON import)
+  file_picker: ^8.0.3
+
+  # Secure storage (for JWT tokens)
+  flutter_secure_storage: ^9.0.0
+
+  # Share / export
+  share_plus: ^9.0.0
+  open_filex: ^4.4.0
+
+  # UI
+  google_fonts: ^6.1.0
+
+  # Utils
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  drift_dev: ^2.15.0
+  build_runner: ^2.4.8
+  riverpod_generator: ^2.4.0
+  json_serializable: ^6.7.1
+  mockito: ^5.4.4
+  build_verify: ^3.1.0
+
+flutter:
+  uses-material-design: true
