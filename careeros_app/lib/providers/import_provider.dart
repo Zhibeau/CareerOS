@@ -9,7 +9,7 @@ import '../data/local/database.dart';
 import '../data/remote/extract_api.dart';
 import '../domain/importers/chatgpt_importer.dart' as chatgpt;
 import '../domain/importers/claude_importer.dart' as claude;
-import '../domain/models/conversation.dart';
+import '../domain/models/conversation.dart' as domain;
 import 'auth_provider.dart';
 import 'career_provider.dart';
 
@@ -73,7 +73,7 @@ class ImportNotifier extends AsyncNotifier<ImportResult?> {
         : claude.importClaude(filePath);
 
     // 2. Filter already-imported.
-    final newConvs = <Conversation>[];
+    final newConvs = <domain.Conversation>[];
     var skipped = 0;
     for (final conv in conversations) {
       if (await db.conversationExists(conv.id)) {
@@ -114,25 +114,42 @@ class ImportNotifier extends AsyncNotifier<ImportResult?> {
         if (!extraction.isWork) continue;
         workCount++;
 
-        // Store entities.
+        // Store entities using raw parameters (domain → DB boundary).
         final projectIdByName = <String, String>{};
         final skillIdByName = <String, String>{};
 
         for (final project in extraction.projects) {
-          final pid = await db.upsertProject(project);
+          final pid = await db.upsertProject(
+            id: project.id,
+            name: project.name,
+            summary: project.summary,
+            status: project.status,
+            startedAt: project.startedAt,
+            endedAt: project.endedAt,
+            roleId: project.roleId,
+          );
           projectIdByName[project.name] = pid;
           await db.linkConversationProject(convId, pid);
           projectCount++;
         }
 
         for (final skill in extraction.skills) {
-          final sid = await db.upsertSkill(skill);
+          final sid = await db.upsertSkill(
+            id: skill.id,
+            name: skill.name,
+            category: skill.category,
+          );
           skillIdByName[skill.name.trim().toLowerCase()] = sid;
           skillCount++;
         }
 
         for (final achievement in extraction.achievements) {
-          await db.insertAchievement(achievement);
+          await db.insertAchievement(
+            id: achievement.id,
+            summary: achievement.summary,
+            impact: achievement.impact,
+            achievedAt: achievement.achievedAt,
+          );
           achievementCount++;
         }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/database.dart';
 import '../../providers/career_provider.dart';
 
 class SkillsScreen extends ConsumerWidget {
@@ -57,7 +58,7 @@ class SkillsScreen extends ConsumerWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: categorySkills.map((skill) {
+                    children: categorySkills.map<Widget>((skill) {
                       return Chip(
                         label: Text(skill.name),
                         deleteIcon: const Icon(Icons.close, size: 16),

@@ -121,7 +121,7 @@ class AppDatabase extends _$AppDatabase {
     return row != null;
   }
 
-  Future<void> insertConversation(Conversation row) =>
+  Future<void> insertConversation(Insertable<Conversation> row) =>
       into(conversations).insertOnConflictUpdate(row);
 
   Future<void> updateIsWork(String convId, bool isWork) =>
@@ -130,40 +130,52 @@ class AppDatabase extends _$AppDatabase {
 
   // ── Skills (dedup by normalized name) ──
 
-  Future<String> upsertSkill(Skill skill) async {
-    final normalized = skill.name.trim().toLowerCase();
+  Future<String> upsertSkill({
+    required String id,
+    required String name,
+    required String category,
+  }) async {
+    final normalized = name.trim().toLowerCase();
     final existing = await (select(skills)
           ..where((s) => s.name.equals(normalized)))
         .getSingleOrNull();
     if (existing != null) return existing.id;
 
     await into(skills).insert(SkillsCompanion.insert(
-      id: skill.id,
+      id: id,
       name: normalized,
-      category: skill.category,
+      category: category,
     ));
-    return skill.id;
+    return id;
   }
 
   // ── Projects ──
 
-  Future<String> upsertProject(Project project) async {
-    final normalized = project.name.trim().toLowerCase();
+  Future<String> upsertProject({
+    required String id,
+    required String name,
+    String? summary,
+    String? status,
+    String? startedAt,
+    String? endedAt,
+    String? roleId,
+  }) async {
+    final normalized = name.trim().toLowerCase();
     final existing = await (select(projects)
           ..where((p) => p.name.lower().equals(normalized)))
         .getSingleOrNull();
     if (existing != null) return existing.id;
 
     await into(projects).insert(ProjectsCompanion.insert(
-      id: project.id,
-      name: project.name,
-      summary: Value(project.summary),
-      status: Value(project.status),
-      startedAt: Value(project.startedAt),
-      endedAt: Value(project.endedAt),
-      roleId: Value(project.roleId),
+      id: id,
+      name: name,
+      summary: Value(summary),
+      status: Value(status ?? 'active'),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      roleId: Value(roleId),
     ));
-    return project.id;
+    return id;
   }
 
   Future<void> updateProject(ProjectsCompanion data) =>
@@ -172,26 +184,25 @@ class AppDatabase extends _$AppDatabase {
 
   // ── Achievements ──
 
-  Future<String> insertAchievement(Achievement ach) async {
+  Future<String> insertAchievement({
+    required String id,
+    required String summary,
+    String? impact,
+    String? achievedAt,
+  }) async {
     await into(achievements).insert(AchievementsCompanion.insert(
-      id: ach.id,
-      summary: ach.summary,
-      impact: Value(ach.impact),
-      achievedAt: Value(ach.achievedAt),
+      id: id,
+      summary: summary,
+      impact: Value(impact),
+      achievedAt: Value(achievedAt),
     ));
-    return ach.id;
+    return id;
   }
 
   // ── Roles ──
 
-  Future<void> insertRole(Role role) =>
-      into(roles).insert(RolesCompanion.insert(
-        id: role.id,
-        title: role.title,
-        company: Value(role.company),
-        startedAt: Value(role.startedAt),
-        endedAt: Value(role.endedAt),
-      ));
+  Future<void> insertRole(Insertable<Role> data) =>
+      into(roles).insert(data);
 
   Future<void> updateRole(RolesCompanion data) =>
       (update(roles)..where((r) => r.id.equals(data.id.value))).write(data);
